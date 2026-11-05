@@ -1,0 +1,9 @@
+# Xcode / Build artifacts
+*.xcodeproj
+*.xcworkspace
+*.xcarchive
+*.ipa
+build/
+Payload/
+DerivedData/
+.DS_Store
