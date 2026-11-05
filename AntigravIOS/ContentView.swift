@@ -236,11 +236,27 @@ struct MatchedVideosView: View {
 
             Section("Matched Videos (\(matchedItems.count))") {
                 if matchedItems.isEmpty {
-                    ContentUnavailableView(
-                        "No Matched Videos Yet",
-                        systemImage: "video.slash",
-                        description: Text("Run a profile scan or approve close matches from the Review tab.")
-                    )
+                    if #available(iOS 17.0, *) {
+                        ContentUnavailableView(
+                            "No Matched Videos Yet",
+                            systemImage: "video.slash",
+                            description: Text("Run a profile scan or approve close matches from the Review tab.")
+                        )
+                    } else {
+                        VStack(spacing: 8) {
+                            Image(systemName: "video.slash")
+                                .font(.title2)
+                                .foregroundStyle(.secondary)
+                            Text("No Matched Videos Yet")
+                                .font(.headline)
+                            Text("Run a profile scan or approve close matches from the Review tab.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 12)
+                    }
                 } else {
                     ForEach(matchedItems) { item in
                         VideoResultCard(item: item, isReviewMode: false)
@@ -264,11 +280,27 @@ struct ReviewQueueView: View {
         List {
             Section {
                 if reviewItems.isEmpty {
-                    ContentUnavailableView(
-                        "Review Queue Empty",
-                        systemImage: "checkmark.circle",
-                        description: Text("No borderline close-match videos waiting for review.")
-                    )
+                    if #available(iOS 17.0, *) {
+                        ContentUnavailableView(
+                            "Review Queue Empty",
+                            systemImage: "checkmark.circle",
+                            description: Text("No borderline close-match videos waiting for review.")
+                        )
+                    } else {
+                        VStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle")
+                                .font(.title2)
+                                .foregroundStyle(.secondary)
+                            Text("Review Queue Empty")
+                                .font(.headline)
+                            Text("No borderline close-match videos waiting for review.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 12)
+                    }
                 } else {
                     ForEach(reviewItems) { item in
                         VideoResultCard(item: item, isReviewMode: true)
