@@ -14,11 +14,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Select Xcode 16
+        run: |
+          sudo xcode-select -s /Applications/Xcode_16.2.app 2>/dev/null || \
+          sudo xcode-select -s /Applications/Xcode_16.1.app 2>/dev/null || \
+          sudo xcode-select -s /Applications/Xcode_16.0.app 2>/dev/null || \
+          sudo xcode-select -s /Applications/Xcode_16.app 2>/dev/null || true
+          xcodebuild -version
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
       - name: Generate Xcode Project
-        run: xcodegen generate
+        run: |
+          xcodegen generate
+          # Fallback safeguard in case an older Xcode version is selected
+          XCODE_MAJOR=$(xcodebuild -version | head -n 1 | awk '{print $2}' | cut -d. -f1)
+          if [ "$XCODE_MAJOR" -lt 16 ]; then
+            echo "Xcode version is < 16 ($XCODE_MAJOR). Patching objectVersion to 56..."
+            sed -i '' 's/objectVersion = 77;/objectVersion = 56;/g' Antigrav.xcodeproj/project.pbxproj
+          fi
 
       - name: Compile iOS App (Unsigned ARM64 Device Binary)
         run: |
