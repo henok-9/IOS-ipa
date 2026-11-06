@@ -37,6 +37,29 @@ struct LibraryView: View {
 
                 Divider().background(MaterialTheme.surfaceContainerHigh)
 
+                if let err = api.errorMessage {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(MaterialTheme.onErrorContainer)
+                        Text(err)
+                            .font(.system(size: 13))
+                            .foregroundColor(MaterialTheme.onErrorContainer)
+                            .lineLimit(2)
+                        Spacer()
+                        Button {
+                            api.errorMessage = nil
+                        } label: {
+                            Image(systemName: "xmark")
+                                .foregroundColor(MaterialTheme.onErrorContainer)
+                        }
+                    }
+                    .padding(10)
+                    .background(MaterialTheme.errorContainer)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                }
+
                 // Results Content
                 Group {
                     if api.isLoadingLibrary && api.libraryResults.isEmpty {

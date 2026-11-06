@@ -12,14 +12,31 @@ targets:
       - path: AntigravIOS
     info:
       path: AntigravIOS/Info.plist
+      properties:
+        CFBundleDisplayName: "Antigrav"
+        CFBundleShortVersionString: "1.0.0"
+        CFBundleVersion: "1"
+        UILaunchStoryboardName: "LaunchScreen"
+        UILaunchScreen: {}
+        UIUserInterfaceStyle: "Light"
+        NSPhotoLibraryAddUsageDescription: "Antigrav needs access to save video clips to your Photos library."
+        NSPhotoLibraryUsageDescription: "Antigrav needs access to save video clips to your Photos library."
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
+        NSLocalNetworkUsageDescription: "Antigrav requires access to the local network to communicate with your backend server."
     settings:
       base:
         PRODUCT_NAME: Antigrav
         PRODUCT_BUNDLE_IDENTIFIER: com.antigrav.ios
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "5.0"
-        INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
-        INFOPLIST_KEY_UIUserInterfaceStyle: Light
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UILaunchStoryboardName: "LaunchScreen"
+        INFOPLIST_KEY_UIUserInterfaceStyle: "Light"
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: "Antigrav needs access to save video clips to your Photos library."
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Antigrav needs access to save video clips to your Photos library."
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: "Antigrav requires access to the local network to communicate with your backend server."
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGN_IDENTITY: ""

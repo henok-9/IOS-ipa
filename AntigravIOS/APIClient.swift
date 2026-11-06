@@ -308,23 +308,59 @@ final class AntigravAPIClient: ObservableObject {
     }
 
     func downloadVideoToTemp(from url: URL, filename: String) async throws -> URL {
-        let (tempURL, _) = try await URLSession.shared.download(from: url)
-        let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        var req = URLRequest(url: url)
+        req.timeoutInterval = 30.0
+
+        let (tempURL, response) = try await URLSession.shared.download(for: req)
+        if let http = response as? HTTPURLResponse, !(200...299).contains(http.statusCode) {
+            let errorText = (try? String(contentsOf: tempURL)) ?? ""
+            throw NSError(
+                domain: "DownloadError",
+                code: http.statusCode,
+                userInfo: [NSLocalizedDescriptionKey: "Server error (HTTP \(http.statusCode)): \(errorText.prefix(80))"]
+            )
+        }
+
+        let cleanName = filename.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "/", with: "_")
+        let finalFilename = cleanName.isEmpty ? "video.mp4" : (cleanName.hasSuffix(".mp4") ? cleanName : "\(cleanName).mp4")
+        let destinationURL = FileManager.default.temporaryDirectory.appendingPathComponent(finalFilename)
+
         try? FileManager.default.removeItem(at: destinationURL)
         try FileManager.default.moveItem(at: tempURL, to: destinationURL)
         return destinationURL
     }
 
     func saveVideoToCameraRoll(fileURL: URL) async throws {
+        // 1. Verify local file exists on disk
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            throw NSError(
+                domain: "PhotoError",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Video file was not found on device."]
+            )
+        }
+
+        // 2. Verify video file is valid and compatible with iOS Photos
+        guard UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(fileURL.path) else {
+            throw NSError(
+                domain: "PhotoError",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Video format is not compatible with Photos album (or download was incomplete)."]
+            )
+        }
+
+        // 3. Request Photo Library permission (addOnly)
         let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         guard status == .authorized || status == .limited else {
             throw NSError(
                 domain: "PhotoError",
-                code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Photo library access denied. Please allow 'Add Photos Only' in iOS Settings."]
+                code: 3,
+                userInfo: [NSLocalizedDescriptionKey: "Photo library access denied. Please enable 'Add Photos' permission in iOS Settings."]
             )
         }
 
+        // 4. Perform change safely
         try await PHPhotoLibrary.shared().performChanges {
             PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: fileURL)
         }

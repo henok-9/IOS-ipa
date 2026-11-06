@@ -47,6 +47,13 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY=""
 
+      - name: Inspect Built App Bundle
+        run: |
+          echo "=== Compiled Info.plist ==="
+          plutil -p build/Build/Products/Release-iphoneos/Antigrav.app/Info.plist
+          echo "=== App Bundle Resources ==="
+          ls -la build/Build/Products/Release-iphoneos/Antigrav.app
+
       - name: Package Payload into Sideloadable IPA
         run: |
           mkdir -p Payload
