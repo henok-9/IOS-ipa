@@ -8,6 +8,7 @@ struct AntigravApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(apiClient)
+                .preferredColorScheme(.light)
         }
     }
 }

@@ -28,6 +28,7 @@ struct HistoryView: View {
                             HStack(spacing: 8) {
                                 TextField("http://192.168.1.100:8000", text: $inputURL)
                                     .font(.system(size: 14))
+                                    .foregroundColor(MaterialTheme.textPrimary)
                                     .keyboardType(.URL)
                                     .textInputAutocapitalization(.never)
                                     .autocorrectionDisabled()

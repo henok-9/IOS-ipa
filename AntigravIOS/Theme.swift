@@ -82,6 +82,7 @@ struct MaterialCard<Content: View>: View {
         .padding(padding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(MaterialTheme.surfaceVariant)
+        .foregroundColor(MaterialTheme.textPrimary)
         .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 }

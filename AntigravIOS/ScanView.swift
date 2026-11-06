@@ -37,6 +37,7 @@ struct ScanView: View {
 
                             TextField("username or tiktok.com/@profile", text: $username)
                                 .font(.system(size: 15))
+                                .foregroundColor(MaterialTheme.textPrimary)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
 
@@ -137,17 +138,26 @@ struct ScanView: View {
                                 }
 
                                 // Toggle Options
-                                Toggle("Extract Trimmed Clips", isOn: $extractSegments)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .tint(MaterialTheme.primary)
+                                Toggle(isOn: $extractSegments) {
+                                    Text("Extract Trimmed Clips")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(MaterialTheme.textPrimary)
+                                }
+                                .tint(MaterialTheme.primary)
 
-                                Toggle("Compile Highlights Reel", isOn: $compileVideo)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .tint(MaterialTheme.primary)
+                                Toggle(isOn: $compileVideo) {
+                                    Text("Compile Highlights Reel")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(MaterialTheme.textPrimary)
+                                }
+                                .tint(MaterialTheme.primary)
 
-                                Toggle("Auto-Cleanup Unmatched", isOn: $autoCleanup)
-                                    .font(.system(size: 14, weight: .medium))
-                                    .tint(MaterialTheme.primary)
+                                Toggle(isOn: $autoCleanup) {
+                                    Text("Auto-Cleanup Unmatched")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(MaterialTheme.textPrimary)
+                                }
+                                .tint(MaterialTheme.primary)
                             }
                             .padding(.top, 8)
                         } label: {

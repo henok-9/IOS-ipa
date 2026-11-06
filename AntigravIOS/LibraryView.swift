@@ -116,7 +116,10 @@ struct LibraryItemCard: View {
     @State private var player: AVPlayer?
     @State private var downloadedURL: URL?
     @State private var isDownloading: Bool = false
+    @State private var isSavingPhotos: Bool = false
+    @State private var isSavedToPhotos: Bool = false
     @State private var showSegments: Bool = false
+    @State private var savedSegments: Set<String> = []
 
     var body: some View {
         MaterialCard {
@@ -185,11 +188,41 @@ struct LibraryItemCard: View {
                                         .foregroundColor(MaterialTheme.textPrimary)
                                     Spacer()
                                     if let segURL = api.resolveVideoURL(seg.segmentDownloadUrl) {
-                                        ShareLink(item: segURL) {
-                                            Label("Share Clip", systemImage: "square.and.arrow.up")
-                                                .font(.system(size: 11, weight: .semibold))
+                                        let segKey = "\(item.id)_\(index)"
+                                        let isSegSaved = savedSegments.contains(segKey)
+
+                                        Button {
+                                            Task {
+                                                do {
+                                                    let segFile = try await api.downloadVideoToTemp(from: segURL, filename: "clip_\(index)_\(item.filename)")
+                                                    try await api.saveVideoToCameraRoll(fileURL: segFile)
+                                                    savedSegments.insert(segKey)
+                                                } catch {
+                                                    api.errorMessage = "Failed to save clip: \(error.localizedDescription)"
+                                                }
+                                            }
+                                        } label: {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: isSegSaved ? "checkmark" : "square.and.arrow.down")
+                                                Text(isSegSaved ? "Saved" : "Photos")
+                                            }
+                                            .font(.system(size: 11, weight: .semibold))
+                                            .foregroundColor(isSegSaved ? MaterialTheme.onSuccessContainer : MaterialTheme.onPrimaryContainer)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(isSegSaved ? MaterialTheme.successContainer : MaterialTheme.primaryContainer)
+                                            .clipShape(Capsule())
                                         }
-                                        .foregroundColor(MaterialTheme.onPrimaryContainer)
+                                        .disabled(isSegSaved)
+
+                                        ShareLink(item: segURL) {
+                                            Image(systemName: "square.and.arrow.up")
+                                                .font(.system(size: 11, weight: .semibold))
+                                                .foregroundColor(MaterialTheme.textSecondary)
+                                                .padding(6)
+                                                .background(MaterialTheme.surfaceContainerHigh)
+                                                .clipShape(Circle())
+                                        }
                                     }
                                 }
                                 .padding(8)
@@ -204,7 +237,7 @@ struct LibraryItemCard: View {
             Divider().background(MaterialTheme.surfaceContainerHigh)
 
             // Actions Row
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 if let rawURL = item.tiktokUrl, let ttURL = URL(string: rawURL) {
                     Link(destination: ttURL) {
                         HStack(spacing: 4) {
@@ -213,8 +246,8 @@ struct LibraryItemCard: View {
                         }
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(MaterialTheme.textSecondary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 7)
                         .background(MaterialTheme.surfaceContainerHigh)
                         .clipShape(Capsule())
                     }
@@ -222,43 +255,67 @@ struct LibraryItemCard: View {
 
                 Spacer()
 
+                // Save to Photos Button
+                Button {
+                    Task {
+                        isSavingPhotos = true
+                        do {
+                            let localURL: URL
+                            if let local = downloadedURL {
+                                localURL = local
+                            } else if let remoteURL = api.resolveVideoURL(item.videoDownloadUrl) {
+                                isDownloading = true
+                                localURL = try await api.downloadVideoToTemp(from: remoteURL, filename: item.filename)
+                                downloadedURL = localURL
+                                isDownloading = false
+                            } else {
+                                isSavingPhotos = false
+                                return
+                            }
+                            try await api.saveVideoToCameraRoll(fileURL: localURL)
+                            isSavedToPhotos = true
+                        } catch {
+                            api.errorMessage = "Could not save to Photos: \(error.localizedDescription)"
+                        }
+                        isSavingPhotos = false
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        if isSavingPhotos || isDownloading {
+                            ProgressView().scaleEffect(0.7)
+                        } else {
+                            Image(systemName: isSavedToPhotos ? "checkmark.circle.fill" : "square.and.arrow.down")
+                        }
+                        Text(isSavedToPhotos ? "Saved" : "Save to Photos")
+                    }
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(isSavedToPhotos ? MaterialTheme.onSuccessContainer : MaterialTheme.onPrimaryContainer)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(isSavedToPhotos ? MaterialTheme.successContainer : MaterialTheme.primaryContainer)
+                    .clipShape(Capsule())
+                }
+                .disabled(isSavingPhotos || isDownloading || isSavedToPhotos)
+
+                // Share Button
                 if let local = downloadedURL {
                     ShareLink(item: local) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "square.and.arrow.up")
-                            Text("Save / Share")
-                        }
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(MaterialTheme.onPrimaryContainer)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(MaterialTheme.primaryContainer)
-                        .clipShape(Capsule())
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(MaterialTheme.textSecondary)
+                            .padding(8)
+                            .background(MaterialTheme.surfaceContainerHigh)
+                            .clipShape(Circle())
                     }
                 } else if let remoteURL = api.resolveVideoURL(item.videoDownloadUrl) {
-                    Button {
-                        Task {
-                            isDownloading = true
-                            downloadedURL = try? await api.downloadVideoToTemp(from: remoteURL, filename: item.filename)
-                            isDownloading = false
-                        }
-                    } label: {
-                        HStack(spacing: 6) {
-                            if isDownloading {
-                                ProgressView().scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "arrow.down.circle")
-                            }
-                            Text(isDownloading ? "Downloading..." : "Download MP4")
-                        }
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(MaterialTheme.onPrimaryContainer)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(MaterialTheme.primaryContainer)
-                        .clipShape(Capsule())
+                    ShareLink(item: remoteURL) {
+                        Image(systemName: "square.and.arrow.up")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(MaterialTheme.textSecondary)
+                            .padding(8)
+                            .background(MaterialTheme.surfaceContainerHigh)
+                            .clipShape(Circle())
                     }
-                    .disabled(isDownloading)
                 }
             }
         }

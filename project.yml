@@ -18,6 +18,8 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.antigrav.ios
         TARGETED_DEVICE_FAMILY: "1,2"
         SWIFT_VERSION: "5.0"
+        INFOPLIST_KEY_UILaunchStoryboardName: LaunchScreen
+        INFOPLIST_KEY_UIUserInterfaceStyle: Light
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGN_IDENTITY: ""

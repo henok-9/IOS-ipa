@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import Photos
 
 @MainActor
 final class AntigravAPIClient: ObservableObject {
@@ -189,7 +190,25 @@ final class AntigravAPIClient: ObservableObject {
             let url = try endpoint("/api/review-queue")
             let (data, _) = try await URLSession.shared.data(from: url)
             let res = try JSONDecoder().decode(ReviewQueueResponse.self, from: data)
-            self.reviewQueue = res.reviewQueue
+
+            // Deduplicate by video identity (videoId, tiktokUrl, or filename)
+            var seen = Set<String>()
+            var unique: [VideoAnalysisItem] = []
+            for item in res.reviewQueue {
+                let key: String
+                if let vid = item.videoId, !vid.isEmpty {
+                    key = vid
+                } else if let tt = item.tiktokUrl, !tt.isEmpty {
+                    key = tt
+                } else {
+                    key = item.filename
+                }
+                if !seen.contains(key) {
+                    seen.insert(key)
+                    unique.append(item)
+                }
+            }
+            self.reviewQueue = unique
         } catch {
             // Keep existing
         }
@@ -294,5 +313,20 @@ final class AntigravAPIClient: ObservableObject {
         try? FileManager.default.removeItem(at: destinationURL)
         try FileManager.default.moveItem(at: tempURL, to: destinationURL)
         return destinationURL
+    }
+
+    func saveVideoToCameraRoll(fileURL: URL) async throws {
+        let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+        guard status == .authorized || status == .limited else {
+            throw NSError(
+                domain: "PhotoError",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "Photo library access denied. Please allow 'Add Photos Only' in iOS Settings."]
+            )
+        }
+
+        try await PHPhotoLibrary.shared().performChanges {
+            PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: fileURL)
+        }
     }
 }
