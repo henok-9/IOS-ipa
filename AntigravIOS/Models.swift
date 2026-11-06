@@ -1,5 +1,29 @@
 import Foundation
 
+// MARK: - Server Health & Diagnostics
+
+struct ServerStatus: Codable {
+    let status: String
+    let mode: String?
+    let version: String
+    let python: String?
+    let platform: String?
+    let cpuCount: Int?
+    let diskFreeGb: Double?
+    let diskTotalGb: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case mode
+        case version
+        case python
+        case platform
+        case cpuCount = "cpu_count"
+        case diskFreeGb = "disk_free_gb"
+        case diskTotalGb = "disk_total_gb"
+    }
+}
+
 // MARK: - Pose Definition
 
 struct PoseInfo: Codable, Identifiable, Hashable {
@@ -61,9 +85,10 @@ struct ReviewActionRequest: Codable {
     }
 }
 
-// MARK: - Job & Analysis Results
+// MARK: - Segments & Video Results
 
-struct TimeSegmentItem: Codable, Hashable {
+struct TimeSegmentItem: Codable, Hashable, Identifiable {
+    var id: String { "\(poseName)_\(start)_\(end)" }
     let start: Double
     let end: Double
     let poseName: String
@@ -79,31 +104,31 @@ struct TimeSegmentItem: Codable, Hashable {
     }
 }
 
-struct VideoAnalysisItem: Codable, Identifiable {
+struct VideoAnalysisItem: Codable, Identifiable, Hashable {
     let id: String
     let jobId: String
-    let videoId: String
-    let tiktokUrl: String
-    let description: String
-    let likeCount: Int
-    let playCount: Int
-    let videoPath: String
+    let videoId: String?
+    let tiktokUrl: String?
+    let description: String?
+    let likeCount: Int?
+    let playCount: Int?
+    let videoPath: String?
     let filename: String
-    let durationSec: Double
-    let fps: Double
-    let width: Int
-    let height: Int
+    let durationSec: Double?
+    let fps: Double?
+    let width: Int?
+    let height: Int?
     let detectedPose: String
     let matchStatus: String // "matched", "close_match", "approved", "rejected", "unclassified"
-    let closestPose: String
-    let closenessScore: Double
-    let reviewReason: String
-    let bestTimestampSec: Double
-    let confidence: Double
-    let segments: [TimeSegmentItem]
-    let totalFrames: Int
+    let closestPose: String?
+    let closenessScore: Double?
+    let reviewReason: String?
+    let bestTimestampSec: Double?
+    let confidence: Double?
+    let segments: [TimeSegmentItem]?
+    let totalFrames: Int?
     let error: String?
-    let videoDownloadUrl: String
+    let videoDownloadUrl: String?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -131,7 +156,17 @@ struct VideoAnalysisItem: Codable, Identifiable {
         case error
         case videoDownloadUrl = "video_download_url"
     }
+
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+
+    static func == (lhs: VideoAnalysisItem, rhs: VideoAnalysisItem) -> Bool {
+        lhs.id == rhs.id
+    }
 }
+
+// MARK: - Jobs
 
 struct JobSummary: Codable {
     let totalAnalyzed: Int
@@ -144,6 +179,32 @@ struct JobSummary: Codable {
         case matchedCount = "matched_count"
         case reviewQueueCount = "review_queue_count"
         case unclassifiedCount = "unclassified_count"
+    }
+}
+
+struct JobListItem: Codable, Identifiable {
+    let id: String
+    let jobType: String
+    let status: String
+    let createdAt: String
+    let startedAt: String?
+    let completedAt: String?
+    let progressCurrent: Int?
+    let progressTotal: Int?
+    let progressMessage: String?
+    let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case jobType = "job_type"
+        case status
+        case createdAt = "created_at"
+        case startedAt = "started_at"
+        case completedAt = "completed_at"
+        case progressCurrent = "progress_current"
+        case progressTotal = "progress_total"
+        case progressMessage = "progress_message"
+        case error
     }
 }
 
@@ -187,6 +248,25 @@ struct JobDetailResponse: Codable, Identifiable {
         case matchedTiktokUrls = "matched_tiktok_urls"
         case matchedVideoUrls = "matched_video_urls"
     }
+}
+
+// MARK: - Queue & Results Responses
+
+struct ReviewQueueResponse: Codable {
+    let reviewQueue: [VideoAnalysisItem]
+    let total: Int
+
+    enum CodingKeys: String, CodingKey {
+        case reviewQueue = "review_queue"
+        case total
+    }
+}
+
+struct ResultsListResponse: Codable {
+    let results: [VideoAnalysisItem]
+    let total: Int
+    let limit: Int
+    let offset: Int
 }
 
 struct CompilationResponse: Codable {
