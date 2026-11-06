@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import Photos
+import UIKit
 
 @MainActor
 final class AntigravAPIClient: ObservableObject {
